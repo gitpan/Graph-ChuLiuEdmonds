@@ -6,3 +6,5 @@ Revision history for Graph-ChuLiuEdmonds
 0.03    Thu May  1 19:51:56 2008
         Added dependency on Graph to Makefile.PL
 
+0.04    Thu May  1 23:32:52 2008
+	Fixed a bug that could cause an infinite loop

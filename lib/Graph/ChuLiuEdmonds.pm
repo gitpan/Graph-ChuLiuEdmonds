@@ -9,13 +9,13 @@ Graph::ChuLiuEdmonds - Find minimum spanning trees in a directed graph.
 
 =head1 VERSION
 
-Version 0.03
+Version 0.04
 
 =cut
 
 use Carp;
-our $VERSION = '0.03';
-our $DEBUG;
+our $VERSION = '0.04';
+our $DEBUG=0;
 
 =head1 SYNOPSIS
 
@@ -80,9 +80,9 @@ sub _MST {
 
   # phase 1: add best edges and contract cycles
   my @V = $g->vertices;
+  my $_no_vertices=@V;
   my @C;
   my ($x,$y,$w,$e);
-  print STDERR "Graph: $g\n" if $DEBUG;
   while (@V) {
     $y = shift @V;
     print STDERR "processing $y\n" if $DEBUG;
@@ -100,9 +100,11 @@ sub _MST {
     $in{$y}=$x;
     # now we check it does not add a cycle to the MST:
     my @cycle_nodes=($y);
+    my $i=0;
     do {
       unshift @cycle_nodes, $x;
       $x=$in{$x};
+      die "BUG: looking for a cycle caused an infinite loop" if $i++ > $_no_vertices; # just for sure: should never happen.
     } while (defined($x) and $x ne $y);
     if (defined $x) {
       # the new edge made a cycle:
@@ -166,6 +168,7 @@ sub _MST {
 
       # delete the nodes of the @cycle_nodes
       $g->delete_vertices(@cycle_nodes);
+      delete @in{@cycle_nodes};
       push @C,[$cycle,\@cycle_nodes,\@cycle_weights,\%to,\%from,\%toW,\%fromW];
     }
   }
