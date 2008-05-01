@@ -9,12 +9,12 @@ Graph::ChuLiuEdmonds - Find minimum spanning trees in a directed graph.
 
 =head1 VERSION
 
-Version 0.02
+Version 0.03
 
 =cut
 
 use Carp;
-our $VERSION = '0.02';
+our $VERSION = '0.03';
 our $DEBUG;
 
 =head1 SYNOPSIS

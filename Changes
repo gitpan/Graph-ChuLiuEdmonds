@@ -3,3 +3,6 @@ Revision history for Graph-ChuLiuEdmonds
 0.02    Thu May  1 19:42:23 2008
         First release.
 
+0.03    Thu May  1 19:51:56 2008
+        Added dependency on Graph to Makefile.PL
+
