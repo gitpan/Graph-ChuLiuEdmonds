@@ -8,3 +8,7 @@ Revision history for Graph-ChuLiuEdmonds
 
 0.04    Thu May  1 23:32:52 2008
 	Fixed a bug that could cause an infinite loop
+
+0.05    Fri May  2 02:02:18 2008
+	Fixed a bug that caused some edges not appear in the resulting
+	MST.

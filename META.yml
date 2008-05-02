@@ -1,6 +1,6 @@
 --- #YAML:1.0
 name:                Graph-ChuLiuEdmonds
-version:             0.04
+version:             0.05
 abstract:            Find minimum spanning trees in a directed graph.
 license:             ~
 author:              

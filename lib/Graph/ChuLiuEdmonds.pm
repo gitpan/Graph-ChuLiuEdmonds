@@ -14,7 +14,7 @@ Version 0.04
 =cut
 
 use Carp;
-our $VERSION = '0.04';
+our $VERSION = '0.05';
 our $DEBUG=0;
 
 =head1 SYNOPSIS
@@ -40,7 +40,8 @@ None.
 
   my $msts = $graph->MST_ChuLiuEdmond();
 
-Returns MSTs for a given directed graph.
+Returns a Graph object that is a forest consisting of MSTs for a given
+directed graph.
 
 Minimum Spanning Trees or MSTs are directed tree subgraphs derived
 from a directed graph that "span the graph" (covering all the
@@ -70,7 +71,6 @@ sub Graph::MST_ChuLiuEdmonds {
   return _MST($graph->deep_copy);
 }
 
-my $cycle_no=0;
 sub _MST {
   my ($g)=@_;
 
@@ -79,14 +79,16 @@ sub _MST {
           # i.e maps Y => X if X->Y is an edge of the resulting MST
 
   # phase 1: add best edges and contract cycles
+  my $cycle_no=0;
   my @V = $g->vertices;
   my $_no_vertices=@V;
   my @C;
   my ($x,$y,$w,$e);
   while (@V) {
+    print "Graph: $g\n" if $DEBUG;
     $y = shift @V;
-    print STDERR "processing $y\n" if $DEBUG;
     my $best_w;
+    print STDERR "selecting incoming edges for vertex $y\n" if $DEBUG;
     for my $e ($g->edges_to($y)) {
       $w = $g->get_edge_weight( $e->[0], $y );
       if (!defined($best_w) or $w<$best_w) {
@@ -109,12 +111,12 @@ sub _MST {
     if (defined $x) {
       # the new edge made a cycle:
       # contract
-      print STDERR "cycle: @cycle_nodes\n" if $DEBUG;
+      my $cycle = 'CYCLE:'.($cycle_no++);
+      print STDERR "$cycle: @cycle_nodes\n" if $DEBUG;
       my @cycle_weights = map { 
 	print STDERR "  $_: $cycle_nodes[$_-1],$cycle_nodes[$_]\n" if $DEBUG;
 	$g->get_edge_weight($cycle_nodes[$_-1],$cycle_nodes[$_]) } 0..$#cycle_nodes;
       print STDERR "cycle weights: @cycle_weights\n" if $DEBUG;
-      my $cycle = 'CYCLE:'.($cycle_no++);
       push @V,$cycle;
 
       $g->add_vertex($cycle); # will represent the contracted @cycle_nodes
@@ -128,6 +130,9 @@ sub _MST {
 	for my $e ($g->edges_from($x)) {
 	  $y=$e->[1];
 	  next if exists $in_cycle{$y};
+	  if (exists $in{$y} and exists $in_cycle{$in{$y}}) {
+	    $in{$y}=$cycle;
+	  }
 	  $w=$g->get_edge_weight($x,$y);
 	  if (!exists($fromW{$y}) or $w < $fromW{$y}) {
 	    $from{$y}=$x;
@@ -136,7 +141,7 @@ sub _MST {
 	}
       }
       for $y (keys %from) {
-	print STDERR "adding edge $cycle -> $y\n" if $DEBUG;
+	print STDERR "adding edge $cycle -> $y weight $fromW{$y}\n" if $DEBUG;
 	$g->add_weighted_edge($cycle, $y, $fromW{$y});
       }
 
@@ -179,16 +184,17 @@ sub _MST {
   # at least one in the original graph).
 
   # prune all edges that are not in the resulting (contracted) MST
+  print STDERR "before phase2: $g\n" if $DEBUG;
   for $y ($g->vertices) {
     $x=$in{$y};
-    $g->delete_edges(map { @$_[0,1] } grep { $_->[0] ne $x } $g->edges_to($y));
+    $g->delete_edges(map { @$_[0,1] } grep { !defined($x) or ($_->[0] ne $x) } $g->edges_to($y));
   }
   # phase 2: expand all cycles
+  print STDERR "phase2: $g\n" if $DEBUG;
   while (@C) {
     my $C = pop @C;
     my ($cycle,$cycle_nodes,$cycle_weights,$to,$from,$toW,$fromW)=@$C;
 
-    print STDERR "$g\n" if $DEBUG;
     print STDERR "expanding: $cycle\n" if $DEBUG;
     $g->add_vertices(@$cycle_nodes);
 
@@ -222,10 +228,11 @@ sub _MST {
     for $e ($g->edges_from($cycle)) {
       $y = $e->[1];
       $x = $from->{$y};
+      print STDERR "restoring edge $x -> $e->[1]\n" if $DEBUG;
       $g->add_weighted_edge($x,$y,$fromW->{$y});
     }
     $g->delete_vertex($cycle);
-    print STDERR "expanded: $cycle\n" if $DEBUG;
+    print STDERR "expanded: $g\n" if $DEBUG;
   }
   # all cycles expanded, we are done!
   print STDERR "MST: $g\n" if $DEBUG;
@@ -239,16 +246,33 @@ Petr Pajas, C<< <pajas at matfyz.cz> >>
 
 =head1 CAVEATS
 
+=over 5
+
+=item o
+
 The implementation was not tested on complex examples.
 
+=item o
+
 Vertices cannot be perl objects (or references).
+
+=item o
+
+Vertex and edge attributes are not copied from the source graph to the
+resulting graph (except for edge weights).
+
+=item o
 
 The author did not attempt to compute the actual algorithmic
 complexity of this particular implementation.
 
+=item o
+
 The algorithm implemented in this module returns the optimal MSTs. To
 obtain k-best MSTs, one could implement Camerini's algorithm L<[4]>
 (also described in [5]).
+
+=back
 
 =head1 BUGS
 
