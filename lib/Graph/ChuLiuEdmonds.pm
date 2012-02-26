@@ -9,12 +9,12 @@ Graph::ChuLiuEdmonds - Find minimum spanning trees in a directed graph.
 
 =head1 VERSION
 
-Version 0.04
+Version 0.05
 
 =cut
 
 use Carp;
-our $VERSION = '0.05';
+our $VERSION = '0.06';
 our $DEBUG=0;
 
 =head1 SYNOPSIS
@@ -23,6 +23,7 @@ This module implements Chu-Liu-Edmonds L<[1]>,L<[2]> algorithm for finding a min
 spanning tree (MST) in a directed graph.
 
     use Graph;
+    use Graph::Directed;
     use Graph::ChuLiuEdmonds;
 
     my $graph = Graph::Directed->new(vertices=>[qw(a b c d)]);
@@ -36,9 +37,9 @@ None.
 
 =head1 FUNCTIONS
 
-=head2 MST_ChuLiuEdmond
+=head2 MST_ChuLiuEdmonds
 
-  my $msts = $graph->MST_ChuLiuEdmond();
+  my $msts = $graph->MST_ChuLiuEdmonds();
 
 Returns a Graph object that is a forest consisting of MSTs for a given
 directed graph.
@@ -58,7 +59,7 @@ sub Graph::MST_ChuLiuEdmonds_no_copy {
 
 =head2 MST_ChuLiuEdmonds_no_copy
 
-  my $msts = $graph->MST_ChuLiuEdmond();
+  my $msts = $graph->MST_ChuLiuEdmonds();
 
 Like the method above, only avoiding deep-copying the graph; the
 method prunes $graph so as only the MSTs remain of it.
@@ -81,6 +82,7 @@ sub _MST {
   # phase 1: add best edges and contract cycles
   my $cycle_no=0;
   my @V = $g->vertices;
+  print "Vertices: @V\n" if $DEBUG;
   my $_no_vertices=@V;
   my @C;
   my ($x,$y,$w,$e);
@@ -202,6 +204,7 @@ sub _MST {
     ($e) = $g->edges_to($cycle); # should now be at most one
     if ($e) {
       $x=$e->[0];
+      #print STDERR "incoming edge from: $x\n" if $DEBUG;
       $y = $to->{$x};
       $g->add_weighted_edge($x,$y,$toW->{$x});
       for my $i (0..$#$cycle_nodes) {
@@ -210,6 +213,7 @@ sub _MST {
     } else {
       # the whole graph starts at this cycle
       # find the edge with the lowest weight and disconnect there
+      #print STDERR "the cycle is a root\n" if $DEBUG;
       my $max;
       my $max_i; # the worst edge on the cycle
       my $i = 0;
@@ -221,6 +225,7 @@ sub _MST {
 	$i++
       }
       for $i (0..$#$cycle_nodes) {
+	#print "adding edge $cycle_nodes->[$i-1],$cycle_nodes->[$i] $cycle_weights->[$i] unless $i==$max_i\n" if $DEBUG;
 	$g->add_weighted_edge($cycle_nodes->[$i-1],$cycle_nodes->[$i],$cycle_weights->[$i]) unless $i==$max_i;
       }
     }
